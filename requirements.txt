@@ -1,0 +1,18 @@
+rank-bm25
+numpy<2.0.0
+scikit-learn
+torch
+transformers
+peft
+langchain-openai
+langchain-core
+uqlm
+python-dotenv
+nltk
+spacy
+
+# FActScore — install separately from the local directory:
+# pip install -e FActScore/ --no-deps
+
+# Also run:
+# python -m spacy download en_core_web_sm

@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.cache/
+*.db
+*.pkl
+.env
+.env/
+key.env
+data/scifact/data.tar.gz
+
+# Model weights and checkpoints
+tinyllama-nli-finetuned/
+*.safetensors
+*.bin
+checkpoint-*/
+
+# Logs
+*.log
+finetune_log.txt
+results/*
+data/
