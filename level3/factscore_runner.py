@@ -130,7 +130,7 @@ class FActScoreRunner:
                 continue
 
             print(f"→ gate OK (max_sent={max_sent_score:.2f})")
-            print(f"Running Verfication for {i}th claim")
+            print(f"Running Verfication for claim {i}")
             verification_results = self.run_verification(item, topic, claim, max_sent_score)
             results.append(verification_results)
         
