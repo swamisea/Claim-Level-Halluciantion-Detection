@@ -1,6 +1,6 @@
 # Claim-Level Hallucination Detection
 
-### Group 1:
+### CSCI544 Group 1:
 - Swaminathan Chellappa
 - Aaradhya Goyal
 - Meeth Davda
