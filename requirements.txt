@@ -2,14 +2,18 @@ rank-bm25
 numpy<2.0.0
 scikit-learn
 torch
-transformers
+transformers==4.57.6
 peft
 langchain-openai
 langchain-core
-uqlm
 python-dotenv
 nltk
 spacy
+matplotlib
+pandas
+datasets
+optuna
+bert-score
 
 # FActScore — install separately from the local directory:
 # pip install -e FActScore/ --no-deps

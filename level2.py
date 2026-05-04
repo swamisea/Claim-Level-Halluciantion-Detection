@@ -51,6 +51,9 @@ from uqlm import LongTextUQ
 from factscore.factscorer import FactScorer
 from factscore.retrieval import DocDB, Retrieval
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 DATA_DIR       = Path("data/scifact/data")
 RESULTS_DIR    = Path("results")
@@ -61,7 +64,7 @@ FACTSCORE_DATA = os.path.expanduser("~/.cache/factscore")
 RESULTS_DIR.mkdir(exist_ok=True)
 SCIFACT_CACHE.mkdir(parents=True, exist_ok=True)
 
-N_CLAIMS  = 150
+N_CLAIMS  = 10
 RAND_SEED = 42
 
 SUPPORT    = "SUPPORT"

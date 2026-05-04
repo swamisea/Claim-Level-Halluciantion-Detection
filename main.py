@@ -20,11 +20,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "FActScore"))
 
 from sklearn.metrics import classification_report, accuracy_score, f1_score
-from level2_script import run_level2, compute_metrics as l2_compute_metrics
+from level1 import run_level1
+from level2 import run_level2, compute_metrics as l2_compute_metrics
 
 ROOT        = Path(__file__).parent
 RESULTS_DIR = ROOT / "results"
-LEVEL3_DIR  = ROOT / "final" / "level3"
+LEVEL3_DIR  = ROOT / "level3"
 LABELS      = ["SUPPORT", "CONTRADICT", "NEI"]
 
 
@@ -125,7 +126,9 @@ def print_summary(rows: list[tuple[str, list, list]]):
 
 # ── level runners ─────────────────────────────────────────────────────────────
 
-async def level1_from_results() -> tuple | None:
+async def level1_from_results(rerun: bool) -> tuple | None:
+    if rerun:
+        await run_level1(rerun=True)
     data = _load_json(RESULTS_DIR / "level1_results.json")
     if data is None:
         print("  [!] results/level1_results.json not found — skipping Level 1.")
@@ -155,7 +158,7 @@ def level3_from_results(rerun: bool) -> tuple | None:
         env["PYTHONPATH"] = str(ROOT / "FActScore")
         env["PYTHONIOENCODING"] = "utf-8"
         rc = subprocess.run(
-            [sys.executable, "level3_final.py"],
+            [sys.executable, "level3.py"],
             cwd=str(LEVEL3_DIR), env=env,
         ).returncode
         if rc != 0:
@@ -177,7 +180,7 @@ async def main(levels: list[int], rerun: bool):
 
     if 1 in levels:
         _banner("LEVEL 1 — FActScore + uqlm baseline")
-        result = await level1_from_results()
+        result = await level1_from_results(rerun)
         if result:
             gt, fs_pred, uq_pred = result
             summary_rows += [("L1  FActScore", gt, fs_pred), ("L1  uqlm", gt, uq_pred)]

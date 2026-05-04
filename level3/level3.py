@@ -18,8 +18,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-Path(os.environ.get("RESULTS_DIR")).mkdir(exist_ok=True)
-Path(os.environ.get("SCIFACT_CACHE")).mkdir(parents=True, exist_ok=True)
+ROOT = Path(__file__).parent.parent
+
+Path(ROOT / os.environ.get("RESULTS_DIR")).mkdir(exist_ok=True)
+Path(ROOT / os.environ.get("SCIFACT_CACHE")).mkdir(parents=True, exist_ok=True)
 
 class Level3:
     def __init__(self):
@@ -31,7 +33,7 @@ class Level3:
     def load_corpus(self) -> dict:
         print("1. Loading SciFact corpus")
         corpus = {}
-        for line in (Path(os.environ.get("DATA_DIR")) / "corpus.jsonl").open():
+        for line in (ROOT / os.environ.get("DATA_DIR") / "corpus.jsonl").open():
             doc = json.loads(line)
             sentences = doc["abstract"]
             corpus[doc["doc_id"]] = {
@@ -56,7 +58,7 @@ class Level3:
     
     def load_claims(self, n: int = 50, seed: int = 42) -> list:
         print("2. Loading SciFact claims")
-        training_data = [json.loads(l) for l in (Path(os.environ.get("DATA_DIR")) / "claims_train.jsonl").open()]
+        training_data = [json.loads(l) for l in (ROOT / os.environ.get("DATA_DIR") / "claims_train.jsonl").open()]
 
         by_label = {"SUPPORT": [], "CONTRADICT": [], "NEI": []}
         for example in training_data:
@@ -177,7 +179,7 @@ class Level3:
             display.evaluate_and_print(tinyllama_results)
             _save_json(
                 tinyllama_results,
-                Path(os.environ.get("RESULTS_DIR")) / "level3_tinyllama_results.json",
+                ROOT / os.environ.get("RESULTS_DIR") / "level3_tinyllama_results.json",
             )
         else:
             print("  TINYLLAMA_MODEL not set in .env — skipping Phase 2")
