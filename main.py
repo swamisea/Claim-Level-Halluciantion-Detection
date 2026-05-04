@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Main runner: loads cached results for all levels and prints metrics.
 
