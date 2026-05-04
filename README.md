@@ -9,8 +9,6 @@
 
 A three-level NLP pipeline for claim-level hallucination detection on the [SciFact](https://github.com/allenai/scifact) dataset. Each level progressively improves verdict accuracy by combining FActScore, uncertainty-quantified LLM scoring (uqlm), NLI, and ensemble methods to classify scientific claims as **SUPPORT**, **CONTRADICT**, or **NEI** (Not Enough Information).
 
----
-
 ## Table of Contents
 
 - [Project Structure](#project-structure)
@@ -20,8 +18,6 @@ A three-level NLP pipeline for claim-level hallucination detection on the [SciFa
 - [How Results Are Generated](#how-results-are-generated)
 - [Results Summary](#results-summary)
 - [Fine-tuning (TinyLlama + QLoRA)](#fine-tuning-tinyllama--qlora)
-
----
 
 ## Project Structure
 
@@ -51,8 +47,6 @@ A three-level NLP pipeline for claim-level hallucination detection on the [SciFa
 └── .env.example                   # Template for environment variables
 ```
 
----
-
 ## System & Device
 
 | Item | Details |
@@ -62,8 +56,6 @@ A three-level NLP pipeline for claim-level hallucination detection on the [SciFa
 | Hardware (inference) | Apple Silicon Mac (CPU/MPS) |
 | Hardware (fine-tuning) | Google Colab (NVIDIA GPU with CUDA, A100/T4 recommended) |
 | LLM API | OpenAI `gpt-4o-mini` via LangChain |
-
----
 
 ## Environment Setup
 
@@ -118,8 +110,6 @@ RAND_SEED=42
 
 All other values in `.env.example` are pre-configured with defaults. Adjust the value for N_CLAIMS to increase or decrease the number of claims to be processed.
 
----
-
 ## Running the Code
 
 ### Display saved results (no API calls)
@@ -149,24 +139,22 @@ python main.py --levels 3
 ### Run individual level scripts directly
 
 ```bash
-# Level 1 — load saved results
+# Level 1 - load saved results
 python level1.py
 
-# Level 1 — re-run full pipeline
+# Level 1 - re-run full pipeline
 python level1.py --rerun
 
-# Level 2 — load saved results
+# Level 2 - load saved results
 python level2.py
 
-# Level 2 — re-run full pipeline
+# Level 2 - re-run full pipeline
 python level2.py --rerun
 
-# Level 3 — must be run from the level3/ directory
+# Level 3 - must be run from the level3/ directory
 cd level3
 python level3.py
 ```
-
----
 
 ## How Results Are Generated
 
@@ -176,9 +164,7 @@ The pipeline evaluates scientific claims from the SciFact training set against t
 
 A balanced sample of claims is drawn from `data/scifact/data/claims_train.jsonl` with equal representation across SUPPORT, CONTRADICT, and NEI labels (controlled by `N_CLAIMS` and `RAND_SEED`). The SciFact corpus (`corpus.jsonl`) is loaded into an in-memory dictionary and also indexed in a SQLite database (`scifact_corpus.db`) for FActScore retrieval.
 
----
-
-### Level 1 — FActScore + uqlm Baseline (`level1.py`)
+### Level 1 - FActScore + uqlm Baseline (`level1.py`)
 
 Two independent systems score each claim:
 
@@ -191,27 +177,23 @@ Two independent systems score each claim:
 
 Results are merged per claim and written to `results/level1_results.json` and `results/level1_metrics.json`.
 
----
-
-### Level 2 — Gated FActScore + Label-Prompted uqlm (`level2.py`)
+### Level 2 - Gated FActScore + Label-Prompted uqlm (`level2.py`)
 
 Improvements over Level 1:
 
 1. **BM25 relevance gate**: Before calling the OpenAI API, a BM25 retriever scores each cited abstract against the claim. Claims with a maximum BM25 score below `RELEVANCE_GATE_THRESHOLD` are declared NEI immediately, saving API calls.
 
-2. **Improved FActScore verdict logic**: Adds a NEI-atom fraction threshold (`FS_NEI_ATOM_FRAC`) — if most atoms are unscorable, the verdict defaults to NEI. A small-sample CONTRADICT adjustment tightens the threshold for claims with ≤ 2 definitive atoms.
+2. **Improved FActScore verdict logic**: Adds a NEI-atom fraction threshold (`FS_NEI_ATOM_FRAC`) - if most atoms are unscorable, the verdict defaults to NEI. A small-sample CONTRADICT adjustment tightens the threshold for claims with ≤ 2 definitive atoms.
 
 3. **uqlm with explicit label prompting and n=5**: The prompt structure is more directive, and 5 sampled responses are used for a more stable majority vote.
 
 Results are written to `results/level2_results.json` and `results/level2_metrics.json`.
 
----
+### Level 3 - Ensemble (`level3/level3.py`)
 
-### Level 3 — Ensemble (`level3/level3.py`)
+Level 3 runs three sequential phases. Each phase uses a 3-signal ensemble of FActScore + uqlm + one NLI source - GPT and TinyLlama are alternatives, not used simultaneously.
 
-Level 3 runs three sequential phases. Each phase uses a 3-signal ensemble of FActScore + uqlm + one NLI source — GPT and TinyLlama are alternatives, not used simultaneously.
-
-**Phase 1 — FActScore + uqlm + GPT-4o-mini NLI**
+**Phase 1 - FActScore + uqlm + GPT-4o-mini NLI**
 
 - **FActScore** (same gated logic as Level 2, via `factscore_runner.py`)
 - **uqlm** (label-prompted, n=5, via `uqlm_runner.py`)
@@ -219,17 +201,15 @@ Level 3 runs three sequential phases. Each phase uses a 3-signal ensemble of FAc
 
 The three verdicts are combined: if all agree the result is used directly; if two agree the majority wins; if all three disagree, a confidence-weighted tiebreak is applied (uqlm weight 0.45, NLI fixed 0.30, FActScore proportional to evidence quality). Phase 1 results are saved to `results/level3_results.json`.
 
-**Phase 2 — TinyLlama NLI replaces GPT NLI**
+**Phase 2 - TinyLlama NLI replaces GPT NLI**
 
 Re-runs the same 3-signal ensemble but substitutes the GPT NLI call with a fine-tuned TinyLlama model (`tinyllama_runner.py`). The adapter is loaded from `level3/finetuned_tinyllama/` on top of `TinyLlama/TinyLlama-1.1B-Chat-v1.0` and generates a label token for each claim. Results are saved to `results/level3_tinyllama_results.json`. Phase 2 is skipped if `TINYLLAMA_MODEL` is not set in `.env`.
 
-**Phase 3 — RandomForest Score Classifier**
+**Phase 3 - RandomForest Score Classifier**
 
 A `RandomForest` classifier (`classifier_runner.py`) is trained on numeric features (FActScore ratio, uqlm entailment score, confidence) using 5-fold cross-validation. It always runs once with FActScore + uqlm features only (no NLI). If Phase 2 ran, it also runs a second time with TinyLlama NLI features added. 
 
 A **RandomForest score classifier** (`classifier_runner.py`) is also available as an optional signal. It trains on numeric features (FActScore ratio, uqlm entailment score, confidence) using 5-fold cross-validation (`CV_N_SPLITS=5`) with `RF_N_ESTIMATORS=200` trees.
-
----
 
 ## Fine-tuning (TinyLlama + QLoRA)
 
